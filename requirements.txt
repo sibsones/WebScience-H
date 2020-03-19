@@ -1,0 +1,6 @@
+pymongo
+tweepy
+sklearn
+json
+twitter
+operator
