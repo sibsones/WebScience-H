@@ -1,5 +1,6 @@
 import pymongo
 import operator
+import csv
 
 # This program takes advantage of tweet.json's "mentioned_users" attribute, providing
 # convinient links between users
@@ -76,6 +77,8 @@ def ties(usermentions):
     • Tie is when two users connect
     '''
     ties = 0
+    tiesdict = {}
+
     for user in usermentions:
         for mentioned_user in usermentions[user]:
             if mentioned_user == user:
@@ -85,8 +88,9 @@ def ties(usermentions):
                 and user in usermentions[mentioned_user]
             ):
                 ties += 1
+                tiesdict.update({user:mentioned_user})
     print("Total # of Ties: ",ties)
-    return ties
+    return ties,tiesdict
 
 def triads(usermentions):
     '''
@@ -95,6 +99,7 @@ def triads(usermentions):
     loop of length 3 or a triangle.
     '''
     triads = 0
+    triadsdict = {}
     for user in usermentions:
         for mentioned_user in usermentions[user]:
             if mentioned_user != user and check(
@@ -114,9 +119,10 @@ def triads(usermentions):
                             mentioned_user2, mentioned_user, usermentions
                         ):
                             triads += 1
+                            triadsdict.update({user:[mentioned_user,mentioned_user2]})
 
     print("Total # of Triads: ",triads)
-    return triads
+    return triads,triadsdict
 
 def check(user1, user2, mentions):
     # check if 2 users are in the same mentioned user dictionary
@@ -127,11 +133,26 @@ def check(user1, user2, mentions):
     else:
         return False
 
+def writeTriads(ties,triads):
+    with open('ties.csv','w',newline='') as f:
+        for key in ties.keys():
+            f.write("%s,%s\n"%(key,ties[key][0]))
+
+    with open('triads.csv','w',newline='') as f:
+        for key in triads.keys():
+            f.write("%s,%s,%s\n"%(key,triads[key][0],triads[key][1]))
+
+    #for item in ties:
+
+
 if __name__ == "__main__":
     client = pymongo.MongoClient('127.0.0.1',27017)
     db = client.twitterStreamTest
     tweet_collection = db.tweet_collection
     mentions_dict = mentions(tweet_collection)
     hashtags = hashtag_groups(tweet_collection)
-    ties(mentions_dict)
-    triads(mentions_dict)
+    ties,tiesdict = ties(mentions_dict)
+    triads,triadsdict = triads(mentions_dict)
+
+    print(tiesdict)
+    writeTriads(tiesdict,triadsdict)
